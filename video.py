@@ -11,8 +11,6 @@ import motionDetector as md
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-
 class Video:
 	FRAMES_READ_MIN = 10
 	VIDEOS_CSV_DEFAULT = 'videos.csv'
@@ -38,6 +36,7 @@ class Video:
 	# 	Calculated attributes
 		'size_length_ratio'
 	]
+	cv2Initiated=False
 
 	@classmethod
 	def getAttributeList(self):
@@ -54,8 +53,6 @@ class Video:
 			raise ValueError('Video id not found.')
 		if (not os.path.exists(self.filePath)):
 			raise ValueError('Video file path does not exist.')
-		self.timestamp = os.path.getmtime(self.filePath)
-		self.Cv2Init()
 
 	def Cv2Init(self):
 		try:
@@ -70,6 +67,7 @@ class Video:
 		except:
 			# TODO: logger
 			raise
+		cv2Initiated=True
 
 	def __getitem__(self, key):
 		return self.getAttribute(key)
@@ -133,14 +131,20 @@ class Video:
 	def getWidth(self):
 		'''Number of pixels in horizontal axis'''
 		# CV_CAP_PROP_FRAME_WIDTH
+		if(not self.cv2Initiated):
+			self.Cv2Init()
 		return self.width
 
 	def getHeight(self):
 		'''Number of pixels in vertical axis'''
+		if (not self.cv2Initiated):
+			self.Cv2Init()
 		return self.height
 
 	def getLength(self):
 		'''Frame count'''
+		if (not self.cv2Initiated):
+			self.Cv2Init()
 		if int(self.cv2_major_ver) < 3:
 			length = int(self.videoCapture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
 		else:
@@ -148,6 +152,8 @@ class Video:
 		return length
 
 	def getFps(self):
+		if (not self.cv2Initiated):
+			self.Cv2Init()
 		if int(self.cv2_major_ver) < 3:
 			fps = self.videoCapture.get(cv2.cv.CV_CAP_PROP_FPS)
 		else:
@@ -156,6 +162,8 @@ class Video:
 
 	def getEncoding(self):
 		'''The four digit code corresponding to the video codec'''
+		if (not self.cv2Initiated):
+			self.Cv2Init()
 		if int(self.cv2_major_ver) < 3:
 			encoding = self.videoCapture.get(cv2.cv.CV_CAP_PROP_FOURCC)
 		else:
@@ -169,13 +177,18 @@ class Video:
 
 	def getTimestamp(self):
 		'''modified date in floating point'''
+		self.timestamp = os.path.getmtime(self.filePath)
 		return self.timestamp
 
 	def getDate(self):
+		if(hasattr(self,"timestamp")):
+			self.timestamp = os.path.getmtime(self.filePath)
 		date = datetime.datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
 		return date
 
 	def getTime(self):
+		if (hasattr(self, "timestamp")):
+			self.timestamp = os.path.getmtime(self.filePath)
 		time = datetime.datetime.fromtimestamp(self.timestamp).strftime('%H:%M:%S')
 		return time
 
@@ -192,6 +205,8 @@ class Video:
 		return sizeLengthRatio
 
 	def getMovementPercent(self):
+		if (not self.cv2Initiated):
+			self.Cv2Init()
 		movement_percent=0
 		motionDetector = md.MotionDetectorContour(video=self.videoCapture)
 		(frame_counter, analyzed_frames, frames_with_motion, percentage, percentage_of_mov,
@@ -222,7 +237,7 @@ class Video:
 		return bitRate
 
 	def __del__(self):
-		if (self.videoCapture is not None):
+		if (hasattr(self, "videoCapture") and self.videoCapture is not None):
 			self.videoCapture.release()
 
 
