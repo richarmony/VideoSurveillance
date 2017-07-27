@@ -12,19 +12,26 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+
 class Video:
 	FRAMES_READ_MIN = 10
 	VIDEOS_CSV_DEFAULT = 'videos.csv'
 	ATTRIBUTES = [
-		'length',
+		#Data Model VideoObject
+		'id',
+		'camera_id',
+		'latitude',			#added
+		'longitude',		#added
+		'size_on_disk',  	#contentSize
 		'width',
 		'height',
+		'duration',
+		'bit_rate', 		#added
 		'fps',
 		'encoding',
-		'size_on_disk',
+		'length',
 		'date',
 		'time',
-		'camera_id',
 	# 	TODO: Agregar atributos de archivo data models gdoc
 	# 	External functions
 		'movement_percent',
@@ -109,17 +116,31 @@ class Video:
 			'self.get' + su.getTitlecaseFromSnakecase(name) + '()' if externalFunction is None else externalFunction + '(self)')
 		return attribute
 
+	def getId(self):
+		'''Consecutive number'''
+		Id = self.video.index
+		return Id
+
 	def getDuration(self):
-		duration = self.getFps() / self.getLength()
+		'''Time expressed in seconds'''
+		fps = self.getFps()
+		length = self.getLength()
+		if(fps==0 or length==0):
+			return 0
+		duration = length / fps
 		return duration
 
 	def getWidth(self):
+		'''Number of pixels in horizontal axis'''
+		# CV_CAP_PROP_FRAME_WIDTH
 		return self.width
 
 	def getHeight(self):
+		'''Number of pixels in vertical axis'''
 		return self.height
 
 	def getLength(self):
+		'''Frame count'''
 		if int(self.cv2_major_ver) < 3:
 			length = int(self.videoCapture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
 		else:
@@ -134,6 +155,7 @@ class Video:
 		return fps
 
 	def getEncoding(self):
+		'''The four digit code corresponding to the video codec'''
 		if int(self.cv2_major_ver) < 3:
 			encoding = self.videoCapture.get(cv2.cv.CV_CAP_PROP_FOURCC)
 		else:
@@ -141,10 +163,12 @@ class Video:
 		return encoding
 
 	def getSizeOnDisk(self):
+		'''Size of the file expressed in bytes'''
 		sizeOnDisk = os.path.getsize(self.filePath)
 		return sizeOnDisk
 
 	def getTimestamp(self):
+		'''modified date in floating point'''
 		return self.timestamp
 
 	def getDate(self):
@@ -158,7 +182,8 @@ class Video:
 	def getCameraId(self):
 		ip = su.getIp(self.filePath)
 		camera = cam.Camera(ip=ip)
-		return camera["id"]
+		id = camera["id"]
+		return id
 
 	def getSizeLengthRatio(self):
 		if(self.getLength()==0):
@@ -168,9 +193,33 @@ class Video:
 
 	def getMovementPercent(self):
 		movement_percent=0
-		# motionDetector = md.MotionDetectorContour(videoPath=self.filePath)
-		# (movement_percent, delete)=motionDetector.run()
-		return movement_percent
+		motionDetector = md.MotionDetectorContour(video=self.videoCapture)
+		(frame_counter, analyzed_frames, frames_with_motion, percentage, percentage_of_mov,
+		result)= motionDetector.run()
+		return '%f.2' % (percentage)
+
+	def getLatitude(self):
+		'''retrieved from camera model'''
+		ip = su.getIp(self.filePath)
+		camera = cam.Camera(ip=ip)
+		latitude = camera["latitude"]
+		return latitude
+
+	def getLongitude(self):
+		'''retrieved from camera model'''
+		ip = su.getIp(self.filePath)
+		camera = cam.Camera(ip=ip)
+		latitude = camera["longitude"]
+		return latitude
+
+	def getBitRate(self):
+		'''bps = bits per second'''
+		sizeOnDisk = self.getSizeOnDisk()
+		duration = self.getDuration()
+		if(sizeOnDisk == 0 or duration == 0):
+			return 0
+		bitRate = sizeOnDisk*8/duration
+		return bitRate
 
 	def __del__(self):
 		if (self.videoCapture is not None):

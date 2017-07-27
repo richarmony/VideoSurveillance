@@ -5,9 +5,15 @@ import pandas as pd
 class Camera:
 	CAMERAS_CSV = 'cameras.csv'
 
+	@classmethod
+	def getCameras(self):
+		if (not hasattr(self, 'cameras') or (hasattr(self, 'cameras') and self.cameras is None)):
+			self.cameras = pd.DataFrame.from_csv(self.CAMERAS_CSV, index_col=None)
+		return self.cameras
+
 	def __init__(self, id=None, ip=None, cameras=None):
 		if (cameras is None):
-			self.cameras = pd.DataFrame.from_csv(self.CAMERAS_CSV, index_col=None)
+			self.cameras = self.getCameras()
 		else:
 			self.cameras = cameras
 		if (id is None and ip is None):
