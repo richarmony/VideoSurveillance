@@ -177,17 +177,18 @@ class Video:
 
 	def getTimestamp(self):
 		'''modified date in floating point'''
-		self.timestamp = os.path.getmtime(self.filePath)
+		if (not hasattr(self, "timestamp")):
+			self.timestamp = os.path.getmtime(self.filePath)
 		return self.timestamp
 
 	def getDate(self):
-		if(hasattr(self,"timestamp")):
+		if(not hasattr(self,"timestamp")):
 			self.timestamp = os.path.getmtime(self.filePath)
 		date = datetime.datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
 		return date
 
 	def getTime(self):
-		if (hasattr(self, "timestamp")):
+		if (not hasattr(self, "timestamp")):
 			self.timestamp = os.path.getmtime(self.filePath)
 		time = datetime.datetime.fromtimestamp(self.timestamp).strftime('%H:%M:%S')
 		return time
