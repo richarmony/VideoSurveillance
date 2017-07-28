@@ -9,6 +9,7 @@ ipAddress_test_list = '105.161.191.227, 97.133.165.17, 76.49.110.168, 17.111.236
 good_filename = r"D:\Server\camaras_Nov_24_2016\camaras_11_00\11.40.54.27\PB_1-01080-01140.mp4"
 wrong_filename = r"D:\Server\camaras_Nov_24_2016\camaras_11_00\11.40.54.27\PB_2-01080-01141.mp4"
 
+
 def find_by_extension(extension, path=os.getcwd()):
 	'''generate a list of files... same result as:
 	windows: dir *expresion /s /b > file_search.txt
@@ -28,6 +29,8 @@ def find_by_extension(extension, path=os.getcwd()):
 				f.write(path)
 	f.close()
 	return file_list
+
+
 def find_videos(directory=os.getcwd()):
 	'''generate a list of videos from folder... same result as:
 		windows: dir *.mp4 /s /b > video_search.txt
@@ -47,6 +50,8 @@ def find_videos(directory=os.getcwd()):
 	f.close()
 	f.close()
 	return video_list
+
+
 def checkFileNames(videoPath):
 	'''Check if the videos are correctly named according to IP address and filename'''
 	camera_dict = {
@@ -101,6 +106,8 @@ def checkFileNames(videoPath):
 	else:
 		# print "Dict: %s is equal to filename: %s" %(camera_dict[last_digits], file_suffix)
 		return "Correct filename %s" % (original_filename)
+
+
 def average_coordinate(input_array):
 	'''Takes a series of coordinates and returns the average, formtat is dd.mm.ss.'''
 	degrees = 0
@@ -127,7 +134,9 @@ def average_coordinate(input_array):
 	if seconds is not 0:
 		seconds = seconds / counter
 
-	return '%s. %s. %s.' %(degrees, minutes, seconds)
+	return '%s. %s. %s.' % (degrees, minutes, seconds)
+
+
 def save_video_attributes(inputFilepath="video_search.txt", outputFilepath="videos.csv", overwrite=True):
 	"""
 	TODO: C++ pandas integration?
@@ -137,8 +146,8 @@ def save_video_attributes(inputFilepath="video_search.txt", outputFilepath="vide
 	attributeList = vi.Video.getAttributeList()
 	videos = pd.read_csv(inputFilepath, sep=',', names=['filePath'], index_col=None).head(10)
 	videos = pd.DataFrame(videos, columns=['filePath'].extend(attributeList))
-	(totalRows,_)=videos.shape
-	if (os.path.exists(outputFilepath) and overwrite):
+	(totalRows, _) = videos.shape
+	if ((os.path.exists(outputFilepath) and overwrite) or not os.path.exists(outputFilepath)):
 		file = open(outputFilepath, 'wb')
 		attributesHeader = ','.join(['filePath'].extend(attributeList))
 		file.write(attributesHeader + '\n')
@@ -153,24 +162,27 @@ def save_video_attributes(inputFilepath="video_search.txt", outputFilepath="vide
 			read = video[attributeName]
 		file.write(','.join([str(video[attributeName]) for attributeName in ['filePath'].extend(attributeList)]) + '\n')
 
-def save_video_attribute(inputFilepath="video_search.txt", outputFilepath="videos.csv", overwrite=True, inputAttributeName=None):
+
+def save_video_attribute(inputFilepath="video_search.txt", outputFilepath="videos.csv", overwrite=True,
+						 inputAttributeName=None):
 	"""
 	TODO: C++ pandas integration?
 	:param inputFilepath:
 	:param outputFilepath:
 	"""
-	if(inputAttributeName is None):
+	if (inputAttributeName is None):
 		attributeList = vi.Video.getAttributeList()
 	else:
 		attributeList = [inputAttributeName]
 	for attributeName in attributeList:
 		videos = pd.read_csv(inputFilepath, sep=',', names=['filePath'], index_col=None)
 		videos = pd.DataFrame(videos, columns=['filePath'].extend(attributeList))
-		(totalRows,_)=videos.shape
-		outputFilepathPerAttribute = os.path.join(os.path.dirname(outputFilepath),os.path.splitext(outputFilepath)[0]+"_"+attributeName+".csv")
+		(totalRows, _) = videos.shape
+		outputFilepathPerAttribute = os.path.join(os.path.dirname(outputFilepath),
+												  os.path.splitext(outputFilepath)[0] + "_" + attributeName + ".csv")
 		if (os.path.exists(outputFilepathPerAttribute) and overwrite):
 			file = open(outputFilepathPerAttribute, 'wb')
-			attributesHeader = 'filePath,'+attributeName
+			attributesHeader = 'filePath,' + attributeName
 			file.write(attributesHeader + '\n')
 		else:
 			file = open(outputFilepathPerAttribute, 'ab')
@@ -178,7 +190,23 @@ def save_video_attribute(inputFilepath="video_search.txt", outputFilepath="video
 			print videoLine['filePath']
 			video = vi.Video(videoLine['filePath'], videos=videos)
 			read = video[attributeName]
-			file.write(','.join([str(videoLine['filePath']),str(video[attributeName])]) + '\n')
+			file.write(','.join([str(videoLine['filePath']), str(video[attributeName])]) + '\n')
+
+
+def merge_video_files(outputFilepath="videos.csv"):
+	attributeList = vi.Video.getAttributeList()
+	joined = None
+	for attributeName in attributeList:
+		print attributeName
+		outputFilepathPerAttribute = os.path.join(os.path.dirname(outputFilepath),
+												  os.path.splitext(outputFilepath)[0] + "_" +
+												  attributeName + ".csv")
+		if (joined is None):
+			joined = pd.read_csv(outputFilepathPerAttribute, sep=',', index_col=None)
+		newFile = pd.read_csv(outputFilepathPerAttribute, sep=',', index_col=None)
+		joined = pd.merge(joined, newFile, on='filePath', how='left')
+		joined.to_csv(outputFilepath)
+
 
 if __name__ == '__main__':
 	# print checkFileNames('D:\\Server\\video_list.txt')
@@ -190,11 +218,13 @@ if __name__ == '__main__':
 	# print camera_dict['55']
 
 	# find_videos("/home/a00967373/data")
-	ap = argparse.ArgumentParser()
-	ap.add_argument('--inputAttributeName', required=True)
-	args = vars(ap.parse_args())
-	# save_video_attribute(inputFilepath="video_search_remote.txt")
-	save_video_attribute(inputAttributeName=args["inputAttributeName"])
+	# ap = argparse.ArgumentParser()
+	# ap.add_argument('--inputAttributeName', required=True)
+	# args = vars(ap.parse_args())
+	# # save_video_attribute(inputFilepath="video_search_remote.txt")
+	# save_video_attribute(inputAttributeName=args["inputAttributeName"])
+
+	merge_video_files()
 
 	# input_array = [
 	# 	'19. 35. 41.',
