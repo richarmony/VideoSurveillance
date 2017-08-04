@@ -1,13 +1,11 @@
-import cv2
 import Tkinter as tki
-import tkMessageBox
+import cv2
 import pandas as pd
 import threading as th
 from PIL import Image
 from PIL import ImageTk
 import camera as cm
 import imutils as imu
-
 
 class HelloCameraGui:
 	"""

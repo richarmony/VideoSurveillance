@@ -244,7 +244,8 @@ if __name__ == '__main__':
 	# save_video_attribute(inputAttributeName=args["inputAttributeName"])
 
 	# merge_video_files()
-	delete_video_files(delete=True)
+	# delete_video_files(delete=True)
+	delete_video_files()
 
 	# input_array = [
 	# 	'19. 35. 41.',
